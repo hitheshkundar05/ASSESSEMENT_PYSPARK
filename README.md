@@ -1,129 +1,192 @@
-# ASSESSEMENT_PYSPARK
 # Air Quality Data Analysis using PySpark on Databricks
 
 ## Project Overview
 
-This project demonstrates data engineering concepts using **Apache Spark (PySpark)** on **Databricks**. The objective is to perform data ingestion, data exploration, schema validation, data cleaning, transformations, null value handling, duplicate removal, and save the processed data in an efficient format.
+This project demonstrates a complete PySpark data engineering workflow using Databricks. The project uses an Air Quality dataset from Kaggle to perform data ingestion, exploration, cleaning, transformations, SQL analysis, and storage of processed data.
 
 ---
 
-## Dataset Information
+# Dataset Description
 
-* **Dataset Name:** Station Hour Transformed (Air Quality Dataset)
+* **Dataset Name:** Air Quality Data in India (Extended)
+* **File Used:** /Volumes/workspace/default/data_vol/station_hour_transformed.csv
 * **Source:** Kaggle
-* **Dataset File:** `station_hour_transformed.csv`
-* **Domain:** Air Quality Monitoring
+* **Dataset URL:** https://www.kaggle.com/datasets/neomatrix369/air-quality-data-in-india-extended
 
-The dataset contains hourly air quality measurements collected from different monitoring stations. It includes pollutant concentrations, Air Quality Index (AQI), city, state, station information, season, month, and other environmental attributes.
+The dataset contains hourly air quality measurements collected from monitoring stations across India. It includes pollutant concentrations such as PM2.5, PM10, NO₂, SO₂, CO, O₃, Air Quality Index (AQI), city, state, station details, season, month, and AQI category.
 
 ---
 
-## Technologies Used
+# Technologies Used
 
 * Apache Spark (PySpark)
 * Databricks
 * Python
-* SQL
+* Spark SQL
 
 ---
 
-## Project Workflow
+# Project Steps
 
-### 1. Dataset Upload
+## 1. Dataset Upload
 
 * Downloaded the dataset from Kaggle.
-* Uploaded the CSV file into Databricks Catalog.
+* Uploaded `station_hour_transformed.csv` to the Databricks Unity Catalog Volume.
 
-### 2. Reading the Dataset
+---
 
-* Loaded the dataset into a Spark DataFrame.
-* Used **PERMISSIVE** mode with header and schema inference.
+## 2. Reading the Dataset
 
-### 3. Data Exploration
+The dataset was read using three different Spark read modes:
 
-Performed the following exploratory tasks:
+* **PERMISSIVE** – Reads all records and stores malformed records instead of failing.
+* **DROPMALFORMED** – Ignores malformed records.
+* **FAILFAST** – Stops reading immediately if any malformed record is found.
+
+Finally, the dataset was processed using the appropriate read mode.
+
+---
+
+## 3. Data Exploration
+
+Performed the following exploratory operations:
 
 * Printed all column names.
 * Counted the total number of rows.
-* Displayed the schema.
+* Displayed the DataFrame schema.
 * Counted the total number of columns.
-* Displayed sample records.
+* Displayed the first five records.
 
-### 4. Corrupted Record Detection
+---
 
-* Checked whether the `_corrupt_record` column exists.
-* Verified that the dataset contains no corrupted records.
+## 4. Corrupted Record Detection
 
-### 5. Schema Validation
+Checked whether the `_corrupt_record` column exists.
 
-* Verified the inferred schema.
-* Converted required columns to appropriate data types using `cast()`.
+No corrupted records were found in the dataset.
 
-### 6. Data Transformations
+---
 
-The following transformations were performed:
+## 5. Schema Validation
 
-* Renamed columns using `withColumnRenamed()`.
-* Filtered records with AQI greater than 200.
-* Added a constant column (`Country = India`) using `lit()`.
-* Created new columns using `withColumn()`.
-* Cast columns to appropriate numeric types.
-* Dropped unnecessary columns.
-* Used aliases for better readability.
+Validated the inferred schema and converted the **AQI** column to the **Double** data type using the `cast()` function for numerical analysis.
 
-### 7. Null Value Handling
+---
 
-* Identified null values in every column.
-* Filled missing values with meaningful defaults where appropriate.
+## 6. Data Transformations
 
-### 8. Duplicate Removal
+The following transformations were applied:
 
+* Renamed **StationName** to **Station_Name**.
+* Removed the unnecessary **Unnamed: 0** column.
+* Filtered records where **AQI > 200**.
+* Created a new **Pollution_Level** column using conditional logic.
 * Removed duplicate records using `dropDuplicates()`.
-
-### 9. Saving Processed Data
-
-* Saved the cleaned DataFrame as a Parquet file.
-* Saved the processed dataset as a Databricks table.
+* Filled missing values in **City**, **State**, and **AQI_Bucket**.
 
 ---
 
-## SQL Analysis
+## 7. Null Value Handling
 
-The following SQL queries were executed:
+Missing values were replaced with meaningful values:
 
-1. Top 10 cities with the highest average AQI.
-2. Number of monitoring stations in each state.
-3. Count of records in each AQI category.
-4. Average PM2.5 concentration by season.
+* City → Unknown
+* State → Unknown
+* AQI_Bucket → Unknown
 
----
-
-## Screenshots Included
-
-The repository contains screenshots of:
-
-* Dataset upload
-* DataFrame schema
-* DataFrame preview
-* Row count
-* Column count
-* Null value analysis
-* Data transformations
-* SQL query outputs
-* Final saved table
+This approach preserved records instead of deleting them.
 
 ---
 
-## Challenges Faced
+## 8. Duplicate Removal
 
-* Handling columns with special characters such as `PM2.5`.
-* Converting incorrect data types using `cast()`.
-* Understanding Spark DataFrame transformations.
-* Working with Databricks Catalog and SQL tables.
+Duplicate records were removed using the `dropDuplicates()` function to improve data quality.
 
 ---
 
-## Conclusion
+## 9. Saving Processed Data
 
-This project demonstrates the complete PySpark data engineering workflow, including loading data, validating schema, cleaning data, applying transformations, handling null values, performing SQL analysis, and storing the processed dataset using Databricks.
+The cleaned dataset was saved as:
 
+* Databricks Table: `AQI_Clean`
+* Parquet format in Unity Catalog Volume
+
+---
+
+# Screenshots Included
+
+Include screenshots of the following outputs
+
+* Schema 
+* Column update
+* Drop null values
+
+---
+
+# Justification for Decisions
+
+### Read Mode
+
+The dataset was tested with **PERMISSIVE**, **DROPMALFORMED**, and **FAILFAST** modes to understand Spark's handling of malformed records. **PERMISSIVE** was chosen because it allows processing to continue while preserving malformed records for inspection.
+
+### Transformations
+
+The transformations improved the dataset by:
+
+* Renaming columns for better readability.
+* Removing unnecessary columns.
+* Filtering highly polluted records (AQI > 200).
+* Creating a pollution category.
+* Eliminating duplicate records.
+
+### Null Handling Strategy
+
+Instead of deleting rows containing null values, missing values were replaced with meaningful defaults such as **Unknown**, ensuring that useful records were retained.
+
+---
+
+# Challenges Faced
+
+### Challenge 1
+
+Handling columns containing special characters (for example, `PM2.5`).
+
+**Solution**
+
+Referenced the column correctly or renamed it before processing.
+
+---
+
+### Challenge 2
+
+Incorrect data types after loading the CSV.
+
+**Solution**
+
+Used the `cast()` function to convert the AQI column to `DoubleType`.
+
+---
+
+### Challenge 3
+
+Understanding different Spark read modes.
+
+**Solution**
+
+Tested PERMISSIVE, DROPMALFORMED, and FAILFAST modes and compared their behaviour.
+
+---
+
+### Challenge 4
+
+Working with Databricks Unity Catalog and Spark SQL tables.
+
+**Solution**
+
+Successfully stored the processed dataset as both a managed table and a Parquet file.
+
+---
+
+# Conclusion
+
+This project demonstrates the complete data engineering pipeline using PySpark on Databricks, including dataset ingestion, exploration, schema validation, data transformation, null value handling, duplicate removal, SQL analysis, and efficient storage using Spark tables and Parquet format.
